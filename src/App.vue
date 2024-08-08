@@ -1,8 +1,10 @@
 <template>
   <div id="app">
     <nav>
+      <div class="logo" @click="goHome">Tech Log</div>
       <div v-if="isLoggedIn">
         <span class="email">{{ email }}</span>
+        <router-link to="/write" class="write-button">글쓰기</router-link>
         <button @click="logout" class="logout-button">로그아웃</button>
       </div>
       <div v-else>
@@ -55,6 +57,9 @@ export default {
       } catch (error) {
         console.error('로그아웃 중 오류가 발생했습니다:', error);
       }
+    },
+    goHome() {
+      window.location.href = '/'; // 메인 페이지로 새로고침
     }
   }
 };
@@ -73,13 +78,34 @@ export default {
 
 nav {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 20px;
+}
+
+.logo {
+  font-size: 1.5em;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .email {
   font-weight: bold;
   margin-right: 10px;
+}
+
+.write-button {
+  margin-right: 10px;
+  padding: 5px 10px;
+  background-color: #2db400;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.write-button:hover {
+  background-color: #28a700;
 }
 
 .logout-button {

@@ -3,6 +3,7 @@ import MainPage from '@/views/MainPage.vue';
 import PostDetail from '@/views/PostDetail.vue';
 import Join from '@/views/Join.vue';
 import Login from '@/views/Login.vue';
+import Write from '@/views/Write.vue';
 
 const routes = [
   {
@@ -25,6 +26,11 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login
+  },
+  {
+    path: '/write',
+    name: 'Write',
+    component: Write
   }
 ];
 
