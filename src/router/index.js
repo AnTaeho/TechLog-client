@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import MainPage from '@/views/MainPage.vue';
-import PostDetail from '@/views/PostDetail.vue'; // 새로 추가할 컴포넌트
+import PostDetail from '@/views/PostDetail.vue';
+import Join from '@/views/Join.vue';
+import Login from '@/views/Login.vue';
 
 const routes = [
   {
@@ -9,10 +11,20 @@ const routes = [
     component: MainPage
   },
   {
-    path: '/post/:postId', // 상세 조회 페이지 경로
+    path: '/post/:postId',
     name: 'PostDetail',
     component: PostDetail,
     props: true
+  },
+  {
+    path: '/join',
+    name: 'Join',
+    component: Join
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login
   }
 ];
 
