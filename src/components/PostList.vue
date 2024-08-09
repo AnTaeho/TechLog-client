@@ -32,6 +32,7 @@ export default {
       return thumbnail ? thumbnail : require('@/assets/logo.png');
     },
     goToDetail(postId) {
+      // 게시글 상세 페이지로 이동
       this.$router.push(`/post/${postId}`);
     }
   }
@@ -43,6 +44,9 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
+  justify-content: center;
+  max-width: calc(300px * 5 + 80px); /* 5개의 카드 너비 + 4개의 간격 */
+  width: 100%;
 }
 
 .post-card {

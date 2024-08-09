@@ -1,24 +1,26 @@
 <template>
   <div class="write-container">
     <div class="write-box">
-      <h1>제목을 입력하세요</h1>
+      <h1>게시글 작성하기</h1>
       <input type="text" v-model="title" placeholder="제목을 입력하세요" class="title-input" />
-
-      <h2>요약을 입력하세요</h2>
       <input type="text" v-model="description" placeholder="요약을 입력하세요" class="description-input" />
-
+      
       <div class="markdown-editor">
-        <textarea v-model="content" placeholder="당신의 이야기를 적어보세요..." class="content-textarea"></textarea>
+        <textarea v-model="content" placeholder="내용을 입력하세요" class="content-textarea"></textarea>
       </div>
-
-      <!-- 이미지 업로드 폼 추가 -->
-      <div class="file-upload">
-        <label for="thumbnail">이미지 업로드</label>
-        <input type="file" @change="uploadImage" id="thumbnail" class="file-input" />
+      
+      <!-- 썸네일 미리보기 및 이미지 업로드 -->
+      <div class="thumbnail-upload">
+        <label for="thumbnail">썸네일 이미지 업로드</label>
+        <input type="file" @change="handleImageUpload" id="thumbnail" class="file-input" />
+        <div v-if="thumbnail" class="thumbnail-preview">
+          <p>현재 이미지:</p>
+          <img :src="thumbnail" alt="Thumbnail preview" class="thumbnail-image" />
+        </div>
       </div>
 
       <div class="actions">
-        <router-link to="/" class="back-button">나가기</router-link>
+        <router-link to="/" class="back-button">취소</router-link>
         <button @click="savePost" class="save-button">출간하기</button>
       </div>
     </div>
@@ -35,14 +37,19 @@ export default {
       title: '',
       description: '',
       content: '',
-      thumbnail: '' // 업로드된 이미지 URL을 저장
+      thumbnail: '', // 새롭게 업로드된 썸네일 이미지 URL
+      previousThumbnail: '' // 이전 썸네일 이미지 URL
     };
   },
   methods: {
-    async uploadImage(event) {
+    async handleImageUpload(event) {
       const file = event.target.files[0];
-
       if (!file) return;
+
+      // 기존 이미지가 있으면 삭제
+      if (this.previousThumbnail) {
+        await this.deletePreviousImage();
+      }
 
       const formData = new FormData();
       formData.append('files', file);
@@ -54,10 +61,27 @@ export default {
           }
         });
 
-        this.thumbnail = response.data.result.fileUrl; // S3에서 반환된 이미지 URL을 저장
-        console.log('업로드된 이미지 URL:', this.thumbnail);
+        this.thumbnail = response.data.result.fileUrl; // 새 썸네일 URL을 저장
+        this.previousThumbnail = this.thumbnail; // 새 URL을 이전 썸네일로 업데이트
+        console.log('새로운 썸네일 URL:', this.thumbnail);
       } catch (error) {
         console.error('이미지 업로드 중 오류가 발생했습니다:', error);
+      }
+    },
+    async deletePreviousImage() {
+      try {
+        await axios.delete('http://localhost:8081/images', {
+          params: {
+            fileUrl: this.previousThumbnail
+          },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        });
+        console.log('이전 썸네일 삭제 완료:', this.previousThumbnail);
+        this.previousThumbnail = ''; // 이전 썸네일 URL 초기화
+      } catch (error) {
+        console.error('이전 썸네일 삭제 중 오류가 발생했습니다:', error);
       }
     },
     async savePost() {
@@ -66,19 +90,20 @@ export default {
           title: this.title,
           description: this.description,
           content: this.content,
-          thumbnail: this.thumbnail // 업로드된 이미지 URL을 포함하여 요청
+          thumbnail: this.thumbnail // 새 썸네일 이미지 URL 전달
         }, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`
           }
         });
-        window.location.href = '/'; // 메인 페이지로 리디렉션하면서 새로고침
+
+        this.$router.push('/'); // 게시글 작성 후 메인 페이지로 리다이렉션
       } catch (error) {
-        console.error('글 작성 중 오류가 발생했습니다:', error);
+        console.error('게시글 작성 중 오류가 발생했습니다:', error);
       }
     }
   }
-};
+}
 </script>
 
 <style scoped>
@@ -115,12 +140,23 @@ export default {
   resize: none;
 }
 
-.file-upload {
+.thumbnail-upload {
   margin-bottom: 15px;
 }
 
 .file-input {
   width: 100%;
+}
+
+.thumbnail-preview {
+  margin-top: 15px;
+}
+
+.thumbnail-image {
+  max-width: 100px; /* 미리보기 이미지의 최대 너비 */
+  max-height: 100px; /* 미리보기 이미지의 최대 높이 */
+  object-fit: cover;
+  margin-top: 10px;
 }
 
 .actions {
