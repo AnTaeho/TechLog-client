@@ -1,25 +1,19 @@
 <template>
-  <div class="write-container">
-    <div class="write-box">
-      <h1>제목을 입력하세요</h1>
+  <div class="edit-container">
+    <div class="edit-box">
+      <h1>글 수정하기</h1>
       <input type="text" v-model="title" placeholder="제목을 입력하세요" class="title-input" />
 
-      <h2>요약을 입력하세요</h2>
-      <input type="text" v-model="description" placeholder="요약을 입력하세요" class="description-input" />
+      <h2>태그를 입력하세요</h2>
+      <input type="text" v-model="description" placeholder="태그를 입력하세요" class="description-input" />
 
       <div class="markdown-editor">
         <textarea v-model="content" placeholder="당신의 이야기를 적어보세요..." class="content-textarea"></textarea>
       </div>
 
-      <!-- 이미지 업로드 폼 추가 -->
-      <div class="file-upload">
-        <label for="thumbnail">이미지 업로드</label>
-        <input type="file" @change="uploadImage" id="thumbnail" class="file-input" />
-      </div>
-
       <div class="actions">
         <router-link to="/" class="back-button">나가기</router-link>
-        <button @click="savePost" class="save-button">출간하기</button>
+        <button @click="updatePost" class="save-button">수정하기</button>
       </div>
     </div>
   </div>
@@ -29,52 +23,53 @@
 import axios from 'axios';
 
 export default {
-  name: 'Write',
+  name: 'EditPost',
+  props: {
+    postId: {
+      type: Number,
+      required: true
+    }
+  },
   data() {
     return {
       title: '',
       description: '',
-      content: '',
-      thumbnail: '' // 업로드된 이미지 URL을 저장
+      content: ''
     };
   },
+  created() {
+    this.fetchPostDetail();
+  },
   methods: {
-    async uploadImage(event) {
-      const file = event.target.files[0];
-
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append('files', file);
-
+    async fetchPostDetail() {
       try {
-        const response = await axios.post('http://localhost:8081/images', formData, {
+        const response = await axios.get(`http://localhost:8081/posts/${this.postId}`, {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
           }
         });
-
-        this.thumbnail = response.data.result.fileUrl; // S3에서 반환된 이미지 URL을 저장
-        console.log('업로드된 이미지 URL:', this.thumbnail);
+        const post = response.data.result;
+        this.title = post.title;
+        this.description = post.description;
+        this.content = post.content;
       } catch (error) {
-        console.error('이미지 업로드 중 오류가 발생했습니다:', error);
+        console.error('게시글을 불러오는 중 오류가 발생했습니다:', error);
       }
     },
-    async savePost() {
+    async updatePost() {
       try {
-        await axios.post('http://localhost:8081/posts', {
+        await axios.patch(`http://localhost:8081/posts/${this.postId}`, {
           title: this.title,
           description: this.description,
-          content: this.content,
-          thumbnail: this.thumbnail // 업로드된 이미지 URL을 포함하여 요청
+          content: this.content
         }, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`
           }
         });
-        window.location.href = '/'; // 메인 페이지로 리디렉션하면서 새로고침
+        window.location.href = `/post/${this.postId}`; // PostDetail 페이지로 리디렉션하면서 새로고침
       } catch (error) {
-        console.error('글 작성 중 오류가 발생했습니다:', error);
+        console.error('게시글 수정 중 오류가 발생했습니다:', error);
       }
     }
   }
@@ -82,7 +77,7 @@ export default {
 </script>
 
 <style scoped>
-.write-container {
+.edit-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -90,7 +85,7 @@ export default {
   background-color: #f5f5f5;
 }
 
-.write-box {
+.edit-box {
   background-color: #fff;
   padding: 30px;
   border-radius: 10px;
@@ -113,14 +108,6 @@ export default {
 .content-textarea {
   height: 400px;
   resize: none;
-}
-
-.file-upload {
-  margin-bottom: 15px;
-}
-
-.file-input {
-  width: 100%;
 }
 
 .actions {

@@ -1,31 +1,38 @@
 <template>
   <div class="post-list">
-    <PostItem v-for="post in posts" :key="post.title" :post="post" />
-    <div v-for="n in emptySlots" :key="n" class="post-item empty"></div>
+    <div
+      v-for="post in posts"
+      :key="post.postId"
+      class="post-card"
+      @click="goToDetail(post.postId)"
+    >
+      <img :src="getThumbnailUrl(post.thumbnail)" alt="Post thumbnail" class="post-thumbnail" />
+      <div class="post-content">
+        <h2>{{ post.title }}</h2>
+        <p class="description">{{ post.description }}</p>
+        <p class="meta">
+          {{ post.createdAt }} · {{ post.writer }}
+        </p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import PostItem from './PostItem.vue';
-
 export default {
   name: 'PostList',
-  components: {
-    PostItem
-  },
   props: {
     posts: {
       type: Array,
       required: true
     }
   },
-  computed: {
-    emptySlots() {
-      const postsCount = this.posts.length;
-      const itemsPerRow = 5; // 한 줄에 5개 아이템
-      const rows = Math.ceil(postsCount / itemsPerRow);
-      const totalSlots = rows * itemsPerRow;
-      return totalSlots - postsCount;
+  methods: {
+    getThumbnailUrl(thumbnail) {
+      return thumbnail ? thumbnail : require('@/assets/logo.png');
+    },
+    goToDetail(postId) {
+      this.$router.push(`/post/${postId}`);
     }
   }
 }
@@ -35,20 +42,47 @@ export default {
 .post-list {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  padding: 16px;
-  background-color: #fff;
+  gap: 20px;
 }
 
-.post-item.empty {
-  visibility: hidden;
-  border: none;
-  box-shadow: none;
-  margin: 12px; /* 카드 간의 간격을 살짝 늘리기 위해 변경 */
-  padding: 16px;
+.post-card {
+  width: 300px;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  flex: 1 0 18%; /* 한 줄에 5개 아이템을 배치하기 위해 flex 속성 수정 */
-  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.3s;
+  background-color: white;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+}
+
+.post-thumbnail {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.post-content {
+  padding: 15px;
+}
+
+.post-content h2 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.post-content .description {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.post-content .meta {
+  font-size: 0.8em;
+  color: #999;
 }
 </style>

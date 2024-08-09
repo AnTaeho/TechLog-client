@@ -4,6 +4,8 @@
     <div class="post-meta">
       <p class="writer">{{ post.writer }}</p>
       <p class="createdAt">{{ post.createdAt }}</p>
+      <button v-if="canEdit" @click="editPost" class="edit-button">수정</button>
+      <button v-if="canDelete" @click="deletePost" class="delete-button">삭제</button>
     </div>
     <img :src="defaultImage" alt="Post image" class="post-image" />
     <div class="content" v-html="compiledMarkdown"></div>
@@ -31,6 +33,12 @@ export default {
   computed: {
     compiledMarkdown() {
       return this.md.render(this.post.content || '');
+    },
+    canDelete() {
+      return this.post.writer === localStorage.getItem('email');
+    },
+    canEdit() {
+      return this.post.writer === localStorage.getItem('email');
     }
   },
   created() {
@@ -44,6 +52,21 @@ export default {
       } catch (error) {
         console.error('Error fetching post detail:', error);
       }
+    },
+    async deletePost() {
+      try {
+        await this.$axios.delete(`/posts/${this.postId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        });
+        window.location.href = '/'; // 메인 페이지로 리디렉션하면서 새로고침
+      } catch (error) {
+        console.error('게시글 삭제 중 오류가 발생했습니다:', error);
+      }
+    },
+    editPost() {
+      this.$router.push({ name: 'EditPost', params: { postId: this.postId } });
     }
   }
 }
@@ -74,6 +97,35 @@ export default {
 .post-meta .writer {
   font-weight: bold;
   margin-right: 15px; /* 작성자와 작성일 사이의 간격 */
+}
+
+.edit-button,
+.delete-button {
+  margin-left: auto;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.edit-button {
+  background-color: #3498db;
+  margin-right: 10px;
+}
+
+.edit-button:hover {
+  background-color: #2980b9;
+}
+
+.delete-button {
+  background-color: #e74c3c;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
 }
 
 .post-image {
