@@ -5,7 +5,7 @@ import axios from './plugins/axios'; // 수정된 axios 인스턴스를 임포�
 
 const app = createApp(App);
 
-app.config.globalProperties.$axios = axios;
+app.config.globalProperties.$axios = axios;  // Axios 인스턴스를 글로벌로 등록
 
 app.use(router);
 app.mount('#app');
