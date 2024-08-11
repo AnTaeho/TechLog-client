@@ -1,4 +1,4 @@
-// src/axios.js
+// src/plugins/axios.js
 import axios from 'axios';
 
 // Axios 인스턴스 생성
@@ -11,14 +11,15 @@ axiosInstance.interceptors.request.use((config) => {
   const accessToken = localStorage.getItem('accessToken');
   
   // 인증이 필요한 경로를 정의
-  const authRequiredEndpoints = [
-    /^\/posts(?!\/\d+$)/,  // GET /posts/{id} 외의 모든 /posts 요청
-    /^\/images/,           // 모든 이미지 업로드 및 삭제 요청
-    // 필요한 다른 경로 추가
+  const nonAuthEndpoints = [
+    /^\/users\/.*/,                  // 모든 /users/ 경로
+    /^\/posts\/\d+$/,                // GET /posts/{id} 요청만 허용
+    /^\/error\/.*/,                  // 모든 /error/ 경로
+    /^\/$/,                          // 메인 페이지 (/)
   ];
 
-  // authRequiredEndpoints 중 하나와 일치하면 Authorization 헤더 추가
-  if (authRequiredEndpoints.some((regex) => regex.test(config.url))) {
+  // nonAuthEndpoints와 일치하지 않는 경로에만 Authorization 헤더 추가
+  if (!nonAuthEndpoints.some((regex) => regex.test(config.url))) {
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     } else {
@@ -34,23 +35,17 @@ axiosInstance.interceptors.request.use((config) => {
 // 응답 인터셉터 추가
 axiosInstance.interceptors.response.use(
   (response) => {
-    // 성공적인 응답 처리
     return response;
   },
   (error) => {
-    // 에러 응답 처리
     if (error.response && error.response.status === 401) {
       const { title, message } = error.response.data.error;
       
       if (title === "Unauthorized" && message === "인증에 실패했습니다.") {
-        // accessToken 초기화
         localStorage.removeItem('accessToken');
-        
-        // 메인 페이지로 새로고침
         window.location.href = '/';
       }
     }
-
     return Promise.reject(error);
   }
 );
