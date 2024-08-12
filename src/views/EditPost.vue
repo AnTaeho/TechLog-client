@@ -57,7 +57,12 @@ export default {
         this.thumbnail = thumbnail;
         this.previousThumbnail = thumbnail; // 이전 썸네일 이미지 URL 저장
       } catch (error) {
-        console.error('게시글 정보를 가져오는 중 오류가 발생했습니다:', error);
+        if (error.response && error.response.status === 401) {
+          console.error('401 오류 발생 - 재인증이 필요합니다.', error.response.data);
+          // 필요한 경우 추가 처리 로직을 여기에 작성할 수 있습니다.
+        } else {
+          console.error('게시글 정보를 가져오는 중 오류가 발생했습니다:', error);
+        }
       }
     },
     async handleImageUpload(event) {
@@ -82,7 +87,12 @@ export default {
         this.thumbnail = response.data.result.fileUrl; // 새 썸네일 URL을 저장
         console.log('새로운 썸네일 URL:', this.thumbnail);
       } catch (error) {
-        console.error('이미지 업로드 중 오류가 발생했습니다:', error);
+        if (error.response && error.response.status === 401) {
+          console.error('401 오류 발생 - 재인증이 필요합니다.', error.response.data);
+          // 필요한 경우 추가 처리 로직을 여기에 작성할 수 있습니다.
+        } else {
+          console.error('이미지 업로드 중 오류가 발생했습니다:', error);
+        }
       }
     },
     async deletePreviousImage() {
@@ -98,7 +108,12 @@ export default {
         console.log('이전 썸네일 삭제 완료:', this.previousThumbnail);
         this.previousThumbnail = ''; // 이전 썸네일 URL 초기화
       } catch (error) {
-        console.error('이전 썸네일 삭제 중 오류가 발생했습니다:', error);
+        if (error.response && error.response.status === 401) {
+          console.error('401 오류 발생 - 재인증이 필요합니다.', error.response.data);
+          // 필요한 경우 추가 처리 로직을 여기에 작성할 수 있습니다.
+        } else {
+          console.error('이전 썸네일 삭제 중 오류가 발생했습니다:', error);
+        }
       }
     },
     async updatePost() {
@@ -116,7 +131,13 @@ export default {
 
         this.$router.push(`/post/${this.postId}`); // 게시글 수정 후 해당 게시글 상세 페이지로 리다이렉션
       } catch (error) {
-        console.error('게시글 수정 중 오류가 발생했습니다:', error);
+        if (error.response && error.response.status === 401) {
+          console.error('401 오류 발생 - 재인증이 필요합니다.', error.response.data);
+          // 필요한 경우 추가 처리 로직을 여기에 작성할 수 있습니다.
+        } else {
+          console.error('게시글 수정 중 오류가 발생했습니다:', error);
+          // 필요한 경우 추가 처리 로직을 여기에 작성할 수 있습니다.
+        }
       }
     }
   }

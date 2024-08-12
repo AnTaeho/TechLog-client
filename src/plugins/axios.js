@@ -1,29 +1,40 @@
 // src/plugins/axios.js
 import axios from 'axios';
 
-// Axios 인스턴스 생성
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8081',  // 백엔드 서버 주소
+  baseURL: 'http://localhost:8081',
+  timeout: 10000,
 });
 
-// 요청 인터셉터 추가
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 axiosInstance.interceptors.request.use((config) => {
   const accessToken = localStorage.getItem('accessToken');
   
-  // 인증이 필요한 경로를 정의
   const nonAuthEndpoints = [
-    /^\/users\/.*/,                  // 모든 /users/ 경로
-    /^\/posts\/\d+$/,                // GET /posts/{id} 요청만 허용
-    /^\/error\/.*/,                  // 모든 /error/ 경로
-    /^\/$/,                          // 메인 페이지 (/)
+    /^\/users\/.*/,  // Users related endpoints
+    /^\/posts\/\d+$/, // Individual posts
+    /^\/error\/.*/,   // Error pages
+    /^\/$/,           // Root URL
   ];
 
-  // nonAuthEndpoints와 일치하지 않는 경로에만 Authorization 헤더 추가
+  // Add Authorization header only for protected endpoints
   if (!nonAuthEndpoints.some((regex) => regex.test(config.url))) {
     if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    } else {
-      console.error('액세스 토큰이 없습니다.');
+      config.headers.Authorization = `Bearer ${accessToken}`;  // Use backticks for template literal
     }
   }
 
@@ -32,20 +43,66 @@ axiosInstance.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// 응답 인터셉터 추가
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      const { title, message } = error.response.data.error;
-      
-      if (title === "Unauthorized" && message === "인증에 실패했습니다.") {
-        localStorage.removeItem('accessToken');
-        window.location.href = '/';
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Check if the error is a 401 Unauthorized error
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      if (!isRefreshing) {
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        const refreshToken = localStorage.getItem('refreshToken');
+        try {
+          // Request new tokens using the refresh token
+          const response = await axios.post(`http://localhost:8081/users/reissue?refreshToken=${refreshToken}`);
+          const { accessToken, refreshToken: newRefreshToken } = response.data.result;
+
+          // Save the new tokens
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('refreshToken', newRefreshToken);
+
+          processQueue(null, accessToken);
+
+          // Retry the original request with the new access token
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return axiosInstance(originalRequest);
+        } catch (refreshError) {
+          processQueue(refreshError, null);
+          // If refresh fails, clear tokens and redirect to login page
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          window.location.href = '/';
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
       }
+
+      // Queue requests that are made while the refresh is in progress
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      }).then(token => {
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return axiosInstance(originalRequest);
+      }).catch(err => {
+        // Additional error logging and user feedback handling
+        console.error('Request retry failed:', err);
+        // Optionally add user feedback logic here
+        return Promise.reject(err);
+      });
     }
+
+    // Additional error logging for 401 Unauthorized errors
+    if (error.response && error.response.status === 401) {
+      console.error('Unauthorized:', error.response.data.error.message);
+      // Optionally add UI state changes or user notification logic here
+    }
+
     return Promise.reject(error);
   }
 );
