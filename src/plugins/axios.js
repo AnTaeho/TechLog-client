@@ -10,7 +10,7 @@ let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
@@ -21,36 +21,34 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-axiosInstance.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem('accessToken');
-  
-  const nonAuthEndpoints = [
-    /^\/users\/.*/,  // Users related endpoints
-    /^\/posts\/\d+$/, // Individual posts
-    /^\/error\/.*/,   // Error pages
-    /^\/$/,           // Root URL
-  ];
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const accessToken = localStorage.getItem('accessToken');
 
-  // Add Authorization header only for protected endpoints
-  if (!nonAuthEndpoints.some((regex) => regex.test(config.url))) {
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;  // Use backticks for template literal
+    const nonAuthEndpoints = [
+      /^\/users\/.*/,  // Users related endpoints
+      /^\/posts\/\d+$/, // Individual posts
+      /^\/error\/.*/,   // Error pages
+      /^\/$/,           // Root URL
+    ];
+
+    // Add Authorization header only for protected endpoints
+    if (!nonAuthEndpoints.some((regex) => regex.test(config.url))) {
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
     }
-  }
 
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Check if the error is a 401 Unauthorized error
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       if (!isRefreshing) {
         originalRequest._retry = true;
@@ -58,8 +56,10 @@ axiosInstance.interceptors.response.use(
 
         const refreshToken = localStorage.getItem('refreshToken');
         try {
-          // Request new tokens using the refresh token
-          const response = await axios.post(`http://localhost:8081/users/reissue?refreshToken=${refreshToken}`);
+          // Refresh the tokens using the refresh token
+          const response = await axios.post(
+            `http://localhost:8081/users/reissue?refreshToken=${refreshToken}`
+          );
           const { accessToken, refreshToken: newRefreshToken } = response.data.result;
 
           // Save the new tokens
@@ -73,7 +73,7 @@ axiosInstance.interceptors.response.use(
           return axiosInstance(originalRequest);
         } catch (refreshError) {
           processQueue(refreshError, null);
-          // If refresh fails, clear tokens and redirect to login page
+          // Clear tokens and redirect to login on failure
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           window.location.href = '/';
@@ -83,24 +83,23 @@ axiosInstance.interceptors.response.use(
         }
       }
 
-      // Queue requests that are made while the refresh is in progress
+      // Queue the requests that are made while refresh is in progress
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then(token => {
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        return axiosInstance(originalRequest);
-      }).catch(err => {
-        // Additional error logging and user feedback handling
-        console.error('Request retry failed:', err);
-        // Optionally add user feedback logic here
-        return Promise.reject(err);
-      });
+      })
+        .then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return axiosInstance(originalRequest);
+        })
+        .catch((err) => {
+          console.error('Request retry failed:', err);
+          return Promise.reject(err);
+        });
     }
 
-    // Additional error logging for 401 Unauthorized errors
+    // Additional error logging for other 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
       console.error('Unauthorized:', error.response.data.error.message);
-      // Optionally add UI state changes or user notification logic here
     }
 
     return Promise.reject(error);
