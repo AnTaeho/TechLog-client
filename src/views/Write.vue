@@ -1,18 +1,18 @@
 <template>
-  <div class="write-container">
+  <div class="write-container" @dragover.prevent @drop.prevent="handleDrop">
     <div class="write-box">
       <h1>게시글 작성하기</h1>
       <input type="text" v-model="title" placeholder="제목을 입력하세요" class="title-input" />
       <input type="text" v-model="description" placeholder="요약을 입력하세요" class="description-input" />
       
       <div class="markdown-editor">
-        <textarea v-model="content" placeholder="내용을 입력하세요" class="content-textarea"></textarea>
+        <textarea ref="contentTextarea" v-model="content" placeholder="내용을 입력하세요" class="content-textarea"></textarea>
       </div>
       
       <!-- 썸네일 미리보기 및 이미지 업로드 -->
       <div class="thumbnail-upload">
         <label for="thumbnail">썸네일 이미지 업로드</label>
-        <input type="file" @change="handleImageUpload" id="thumbnail" class="file-input" />
+        <input type="file" @change="handleThumbnailUpload" id="thumbnail" class="file-input" />
         <div v-if="thumbnail" class="thumbnail-preview">
           <p>현재 이미지:</p>
           <img :src="thumbnail" alt="Thumbnail preview" class="thumbnail-image" />
@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axiosInstance from '@/plugins/axios';
 
 export default {
   name: 'Write',
@@ -42,68 +42,86 @@ export default {
     };
   },
   methods: {
-    async handleImageUpload(event) {
+    async handleThumbnailUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
 
-      // 기존 이미지가 있으면 삭제
       if (this.previousThumbnail) {
-        await this.deletePreviousImage();
+        await this.deletePreviousThumbnail();
       }
 
       const formData = new FormData();
       formData.append('files', file);
 
       try {
-        const response = await axios.post('http://localhost:8081/images', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+        const response = await axiosInstance.post('/images', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        this.thumbnail = response.data.result.fileUrl; // 새 썸네일 URL을 저장
-        this.previousThumbnail = this.thumbnail; // 새 URL을 이전 썸네일로 업데이트
+        this.thumbnail = response.data.result.fileUrl;
+        this.previousThumbnail = this.thumbnail;
         console.log('새로운 썸네일 URL:', this.thumbnail);
       } catch (error) {
         console.error('이미지 업로드 중 오류가 발생했습니다:', error);
       }
     },
-    async deletePreviousImage() {
+    async deletePreviousThumbnail() {
       try {
-        await axios.delete('http://localhost:8081/images', {
-          params: {
-            fileUrl: this.previousThumbnail
-          },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-          }
+        await axiosInstance.delete('/images', {
+          params: { fileUrl: this.previousThumbnail }
         });
-        console.log('이전 썸네일 삭제 완료:', this.previousThumbnail);
-        this.previousThumbnail = ''; // 이전 썸네일 URL 초기화
+        this.previousThumbnail = '';
       } catch (error) {
         console.error('이전 썸네일 삭제 중 오류가 발생했습니다:', error);
       }
     },
+    async handleDrop(event) {
+      const files = event.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        await this.uploadImage(file);
+      }
+    },
+    async uploadImage(file) {
+      const formData = new FormData();
+      formData.append('files', file);
+
+      try {
+        const response = await axiosInstance.post('/images', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        const imageUrl = response.data.result.fileUrl;
+        this.insertImageUrlAtCursor(imageUrl);
+        console.log('이미지 URL:', imageUrl);
+      } catch (error) {
+        console.error('이미지 업로드 중 오류가 발생했습니다:', error);
+      }
+    },
+    insertImageUrlAtCursor(imageUrl) {
+      const textarea = this.$refs.contentTextarea;
+      const cursorPosition = textarea.selectionStart;
+      const textBeforeCursor = this.content.slice(0, cursorPosition);
+      const textAfterCursor = this.content.slice(cursorPosition);
+
+      this.content = `${textBeforeCursor}![image](${imageUrl})${textAfterCursor}`;
+    },
     async savePost() {
       try {
-        await axios.post('http://localhost:8081/posts', {
+        await axiosInstance.post('/posts', {
           title: this.title,
           description: this.description,
           content: this.content,
-          thumbnail: this.thumbnail // 새 썸네일 이미지 URL 전달
-        }, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-          }
+          thumbnail: this.thumbnail
         });
 
-        this.$router.push('/'); // 게시글 작성 후 메인 페이지로 리다이렉션
+        this.$router.push('/');
       } catch (error) {
         console.error('게시글 작성 중 오류가 발생했습니다:', error);
       }
     }
   }
-}
+};
 </script>
 
 <style scoped>
@@ -153,8 +171,8 @@ export default {
 }
 
 .thumbnail-image {
-  max-width: 100px; /* 미리보기 이미지의 최대 너비 */
-  max-height: 100px; /* 미리보기 이미지의 최대 높이 */
+  max-width: 100px;
+  max-height: 100px;
   object-fit: cover;
   margin-top: 10px;
 }
