@@ -23,6 +23,9 @@
         <router-link to="/" class="back-button">취소</router-link>
         <button @click="savePost" class="save-button">출간하기</button>
       </div>
+
+      <!-- Preview of the content with rendered HTML -->
+      <div class="content-preview" v-html="content"></div>
     </div>
   </div>
 </template>
@@ -104,7 +107,7 @@ export default {
       const textBeforeCursor = this.content.slice(0, cursorPosition);
       const textAfterCursor = this.content.slice(cursorPosition);
 
-      this.content = `${textBeforeCursor}![image](${imageUrl})${textAfterCursor}`;
+      this.content = `${textBeforeCursor}<img src="${imageUrl}" width="50" height="50"/>${textAfterCursor}`;
     },
     async savePost() {
       try {
@@ -207,5 +210,14 @@ export default {
 
 .save-button:hover {
   background-color: #28a700;
+}
+
+/* Add styles for content preview */
+.content-preview {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
 }
 </style>
