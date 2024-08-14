@@ -52,16 +52,16 @@ export default {
 }
 
 .post-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  max-width: calc(300px * 5 + 80px); /* 5개의 카드 너비 + 4개의 간격 */
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5개의 카드를 한 줄에 고정으로 배치 */
+  gap: 15px; /* 카드 간격을 줄였습니다 */
   width: 100%;
+  max-width: 1500px; /* 화면 최대 너비 설정 */
+  padding: 0; /* 좌우 끝단의 공백을 줄였습니다 */
 }
 
 .post-card {
-  width: 300px;
+  width: 100%;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -76,7 +76,7 @@ export default {
 
 .post-thumbnail {
   width: 100%;
-  height: 180px;
+  height: 160px; /* 썸네일 높이를 조정했습니다 */
   object-fit: cover;
 }
 
