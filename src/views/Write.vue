@@ -1,36 +1,41 @@
 <template>
-  <div class="write-container" @dragover.prevent @drop.prevent="handleDrop">
-    <div class="write-box">
-      <h1>게시글 작성하기</h1>
+  <div class="write-container">
+    <div class="header">
+      <!-- 제목 및 요약 입력 -->
       <input type="text" v-model="title" placeholder="제목을 입력하세요" class="title-input" />
       <input type="text" v-model="description" placeholder="요약을 입력하세요" class="description-input" />
-      
-      <div class="markdown-editor">
+    </div>
+
+    <div class="content-container">
+      <div class="editor-section">
+        <!-- 본문 입력 영역 -->
         <textarea ref="contentTextarea" v-model="content" placeholder="내용을 입력하세요" class="content-textarea"></textarea>
       </div>
-      
-      <!-- 썸네일 미리보기 및 이미지 업로드 -->
-      <div class="thumbnail-upload">
-        <label for="thumbnail">썸네일 이미지 업로드</label>
-        <input type="file" @change="handleThumbnailUpload" id="thumbnail" class="file-input" />
-        <div v-if="thumbnail" class="thumbnail-preview">
-          <p>현재 이미지:</p>
-          <img :src="thumbnail" alt="Thumbnail preview" class="thumbnail-image" />
-        </div>
-      </div>
 
-      <div class="actions">
-        <router-link to="/" class="back-button">취소</router-link>
-        <button @click="savePost" class="save-button">출간하기</button>
+      <div class="preview-section">
+        <!-- 본문 미리보기 영역 -->
+        <div class="content-preview" v-html="compiledMarkdown"></div>
       </div>
+    </div>
 
-      <!-- Preview of the content with rendered HTML -->
-      <div class="content-preview" v-html="content"></div>
+    <div class="thumbnail-upload">
+      <label for="thumbnail">썸네일 이미지 업로드</label>
+      <input type="file" @change="handleThumbnailUpload" id="thumbnail" class="file-input" />
+      <div v-if="thumbnail" class="thumbnail-preview">
+        <p>현재 이미지:</p>
+        <img :src="thumbnail" alt="Thumbnail preview" class="thumbnail-image" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <router-link to="/" class="back-button">취소</router-link>
+      <button @click="savePost" class="save-button">출간하기</button>
     </div>
   </div>
 </template>
 
 <script>
+import { marked } from 'marked';
 import axiosInstance from '@/plugins/axios';
 
 export default {
@@ -40,9 +45,14 @@ export default {
       title: '',
       description: '',
       content: '',
-      thumbnail: '', // 새롭게 업로드된 썸네일 이미지 URL
-      previousThumbnail: '' // 이전 썸네일 이미지 URL
+      thumbnail: '',
+      previousThumbnail: ''
     };
+  },
+  computed: {
+    compiledMarkdown() {
+      return marked(this.content);
+    }
   },
   methods: {
     async handleThumbnailUpload(event) {
@@ -78,37 +88,6 @@ export default {
         console.error('이전 썸네일 삭제 중 오류가 발생했습니다:', error);
       }
     },
-    async handleDrop(event) {
-      const files = event.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        await this.uploadImage(file);
-      }
-    },
-    async uploadImage(file) {
-      const formData = new FormData();
-      formData.append('files', file);
-
-      try {
-        const response = await axiosInstance.post('/images', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-
-        const imageUrl = response.data.result.fileUrl;
-        this.insertImageUrlAtCursor(imageUrl);
-        console.log('이미지 URL:', imageUrl);
-      } catch (error) {
-        console.error('이미지 업로드 중 오류가 발생했습니다:', error);
-      }
-    },
-    insertImageUrlAtCursor(imageUrl) {
-      const textarea = this.$refs.contentTextarea;
-      const cursorPosition = textarea.selectionStart;
-      const textBeforeCursor = this.content.slice(0, cursorPosition);
-      const textAfterCursor = this.content.slice(cursorPosition);
-
-      this.content = `${textBeforeCursor}<img src="${imageUrl}" width="50" height="50"/>${textAfterCursor}`;
-    },
     async savePost() {
       try {
         await axiosInstance.post('/posts', {
@@ -130,39 +109,76 @@ export default {
 <style scoped>
 .write-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  flex-direction: column;
+  min-height: 100vh; /* 전체 화면 높이를 최소 높이로 설정 */
+  padding: 20px;
   background-color: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .write-box {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
   background-color: #fff;
-  padding: 30px;
+  padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  text-align: left;
-  width: 800px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
 }
 
 .title-input,
-.description-input,
-.content-textarea {
+.description-input {
   width: 100%;
   padding: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
   box-sizing: border-box;
 }
 
+.content-container {
+  display: flex;
+  flex-grow: 1;
+  gap: 20px;
+  min-height: auto; /* 내용에 따라 높이가 자동으로 조절되도록 설정 */
+}
+
+.editor-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .content-textarea {
-  height: 400px;
+  width: 100%;
+  height: 100%;
   resize: none;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+  padding: 10px;
+  text-align: left;
+}
+
+.preview-section {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #fff;
+  overflow-y: auto;
+  text-align: left;
+  min-height: auto; /* 미리보기 영역도 내용에 따라 높이가 조절되도록 설정 */
 }
 
 .thumbnail-upload {
-  margin-bottom: 15px;
+  margin-top: 20px;
 }
 
 .file-input {
@@ -183,6 +199,7 @@ export default {
 .actions {
   display: flex;
   justify-content: space-between;
+  margin-top: 20px;
 }
 
 .back-button,
@@ -210,14 +227,5 @@ export default {
 
 .save-button:hover {
   background-color: #28a700;
-}
-
-/* Add styles for content preview */
-.content-preview {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background-color: #f9f9f9;
 }
 </style>
