@@ -2,6 +2,11 @@
   <div class="main-page">
     <h1>게시판</h1>
     <PostList :posts="posts" />
+    <div class="pagination">
+      <button @click="prevPage" :disabled="currentPage === 0">이전</button>
+      <span>{{ currentPage + 1 }} / {{ totalPages }}</span>
+      <button @click="nextPage" :disabled="currentPage >= totalPages - 1">다음</button>
+    </div>
   </div>
 </template>
 
@@ -15,26 +20,50 @@ export default {
   },
   data() {
     return {
-      posts: []
+      posts: [],
+      currentPage: 0,
+      totalPages: 0,
+      pageSize: 20
     };
   },
   created() {
+    this.currentPage = parseInt(this.$route.query.page) || 0;
     this.fetchPosts();
+  },
+  watch: {
+    '$route.query.page': 'fetchPosts'
   },
   methods: {
     async fetchPosts() {
       try {
-        const response = await this.$axios.get('/posts');
+        const response = await this.$axios.get(`/posts?page=${this.currentPage}&size=${this.pageSize}`);
         this.posts = response.data.result.posts;
+        this.totalPages = response.data.page.totalPages;
       } catch (error) {
         console.error('Error fetching posts:', error);
       }
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages - 1) {
+        this.currentPage++;
+        this.updatePageQuery();
+      }
+    },
+    prevPage() {
+      if (this.currentPage > 0) {
+        this.currentPage--;
+        this.updatePageQuery();
+      }
+    },
+    updatePageQuery() {
+      this.$router.push({ query: { page: this.currentPage } });
     }
   }
 }
 </script>
 
 <style scoped>
+/* 기존 스타일 그대로 유지 */
 .main-page {
   display: flex;
   flex-direction: column;
@@ -53,11 +82,11 @@ export default {
 
 .post-list {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 5개의 카드를 한 줄에 고정으로 배치 */
-  gap: 15px; /* 카드 간격을 줄였습니다 */
+  grid-template-columns: repeat(5, 1fr); 
+  gap: 15px; 
   width: 100%;
-  max-width: 1500px; /* 화면 최대 너비 설정 */
-  padding: 0; /* 좌우 끝단의 공백을 줄였습니다 */
+  max-width: 1500px;
+  padding: 0; 
 }
 
 .post-card {
@@ -76,7 +105,7 @@ export default {
 
 .post-thumbnail {
   width: 100%;
-  height: 160px; /* 썸네일 높이를 조정했습니다 */
+  height: 160px; 
   object-fit: cover;
 }
 
@@ -99,5 +128,21 @@ export default {
 .post-content .meta {
   font-size: 0.8em;
   color: #999;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination button {
+  padding: 5px 10px;
+  font-size: 1em;
+}
+
+.pagination span {
+  font-size: 1.2em;
 }
 </style>
