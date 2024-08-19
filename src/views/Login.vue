@@ -44,13 +44,19 @@ export default {
           email: this.email,
           password: this.password
         });
-        const { accessToken, refreshToken } = response.data.result;
+
+        const { accessToken, refreshToken, name } = response.data.result;
+
+        // 로컬 스토리지에 로그인 정보 저장
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('email', this.email);
+        localStorage.setItem('name', name);
+
         this.message = '로그인에 성공했습니다.';
-        this.$emit('login-success', this.email);
-        window.location.href = '/'; // 메인 페이지로 리디렉션
+
+        // 메인 페이지로 리디렉션
+        this.$emit('login-success', { name, accessToken, refreshToken });
+        this.$router.push('/');
       } catch (error) {
         this.message = '로그인 중 오류가 발생했습니다.';
       }
@@ -60,6 +66,7 @@ export default {
 </script>
 
 <style scoped>
+/* 스타일은 그대로 유지 */
 .login-container {
   display: flex;
   justify-content: center;

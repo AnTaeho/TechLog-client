@@ -3,8 +3,12 @@
     <h1>{{ post.title }}</h1>
     <div class="post-meta">
       <div class="meta-left">
-        <p class="writer">{{ post.writer }}</p>
-        <p class="createdAt">{{ post.createdAt }}</p>
+        <div class="tags">
+          <span v-for="tag in post.tags" :key="tag" class="tag-item">{{ tag }}</span>
+        </div>
+        <div class="date-author">
+          <span class="createdAt">{{ post.createdAt }}</span> · <span class="writer">{{ post.writer }}</span>
+        </div>
       </div>
       <div class="meta-right">
         <button v-if="canEdit" @click="editPost" class="edit-button">수정</button>
@@ -22,26 +26,6 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-java'; // Java 언어 지원
 import 'prismjs/components/prism-javascript'; // JavaScript 언어 지원
 import 'prismjs/themes/prism.css'; // 기본 테마
-
-// 사용자 정의 토큰 추가: now() 함수를 강조하기 위해
-Prism.languages.javascript['custom-function'] = {
-  pattern: /\bnow\(\)/g,
-  alias: 'keyword',
-};
-
-Prism.languages.java['custom-function'] = {
-  pattern: /\bnow\(\)/g,
-  alias: 'keyword',
-};
-
-// Prism이 토큰을 재정의하는지 확인
-Prism.languages.insertBefore('javascript', 'function', {
-  'custom-function': Prism.languages.javascript['custom-function'],
-});
-
-Prism.languages.insertBefore('java', 'function', {
-  'custom-function': Prism.languages.java['custom-function'],
-});
 
 export default {
   name: 'PostDetail',
@@ -73,10 +57,10 @@ export default {
       return this.md.render(this.post.content || '');
     },
     canDelete() {
-      return this.post.writer === localStorage.getItem('email');
+      return this.post.writer === localStorage.getItem('name');
     },
     canEdit() {
-      return this.post.writer === localStorage.getItem('email');
+      return this.post.writer === localStorage.getItem('name');
     }
   },
   created() {
@@ -88,7 +72,7 @@ export default {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
+        .replace(/"//g, '&quot;')
         .replace(/'/g, '&#039;');
     },
     getThumbnailUrl(thumbnail) {
@@ -130,7 +114,7 @@ pre code {
   overflow-x: auto;
 }
 
-/* 다른 스타일은 기존 스타일 유지 */
+/* 기존 스타일을 유지하며 추가 수정 */
 .post-detail {
   text-align: left;
   padding: 20px;
@@ -157,14 +141,32 @@ pre code {
   align-items: center;
 }
 
-.meta-left .writer {
-  font-weight: bold;
+.meta-left .tags {
+  display: flex;
+  gap: 5px;
   margin-right: 15px;
+}
+
+.tag-item {
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 0.7em;
+  color: #007bff;
+}
+
+.date-author {
+  font-size: 0.8em;
+  color: #666;
 }
 
 .meta-right {
   display: flex;
   align-items: center;
+}
+
+.meta-right .createdAt {
+  margin-right: 10px;
 }
 
 .edit-button,

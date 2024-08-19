@@ -3,7 +3,7 @@
     <nav>
       <div class="logo" @click="goHome">Tech Log</div>
       <div v-if="isLoggedIn">
-        <span class="email">{{ email }}</span>
+        <span class="user-name">{{ name }}</span> <!-- 이름을 표시 -->
         <router-link to="/write" class="write-button">글쓰기</router-link>
         <button @click="logout" class="logout-button">로그아웃</button>
       </div>
@@ -22,24 +22,34 @@ export default {
   name: 'App',
   data() {
     return {
-      email: ''
+      name: '' // 이메일 대신 이름을 저장할 변수
     };
   },
   computed: {
     isLoggedIn() {
-      return !!localStorage.getItem('accessToken');
+      return !!localStorage.getItem('accessToken'); // accessToken이 존재하면 로그인 상태로 간주
     }
   },
   created() {
     if (this.isLoggedIn) {
-      this.email = localStorage.getItem('email'); // 로컬 스토리지에서 이메일을 가져옴
+      this.name = localStorage.getItem('name'); // 로컬 스토리지에서 이름을 가져옴
     }
   },
   methods: {
-    handleLoginSuccess(email) {
-      this.email = email;
-      localStorage.setItem('email', email); // 이메일을 로컬 스토리지에 저장
-      window.location.href = '/'; // 메인 페이지로 리디렉션
+    handleLoginSuccess(loginData) {
+      const { name, accessToken, refreshToken } = loginData;
+
+      // 토큰과 이름을 로컬 스토리지에 저장
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('name', name);
+
+      // 상태 갱신
+      this.name = name;
+
+      // 메인 페이지로 리디렉션
+      this.$router.push('/');
+      window.location.reload(); // 리로드를 추가하여 페이지가 리프레시될 때 모든 상태를 가져오게 합니다.
     },
     async logout() {
       try {
@@ -48,10 +58,11 @@ export default {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`
           }
         });
+        // 로컬 스토리지에서 인증 정보 제거
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        localStorage.removeItem('email');
-        this.email = '';
+        localStorage.removeItem('name');
+        this.name = '';
         this.$router.push('/');
         window.location.reload(); // 화면 새로고침
       } catch (error) {
@@ -89,7 +100,7 @@ nav {
   cursor: pointer;
 }
 
-.email {
+.user-name { /* 이름 스타일 */
   font-weight: bold;
   margin-right: 10px;
 }

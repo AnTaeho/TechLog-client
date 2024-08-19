@@ -1,26 +1,30 @@
 <template>
   <div class="post-list">
-    <div
-      v-for="post in posts"
-      :key="post.postId"
-      class="post-card"
-      @click="goToDetail(post.postId)"
-    >
-      <img :src="getThumbnailUrl(post.thumbnail)" alt="Post thumbnail" class="post-thumbnail" />
+    <div 
+      v-for="post in posts" 
+      :key="post.postId" 
+      class="post-card" 
+      @click="goToPostDetail(post.postId)">
+      <img :src="getThumbnail(post.thumbnail)" alt="Post Thumbnail" class="post-thumbnail" />
       <div class="post-content">
         <h2>{{ post.title }}</h2>
-        <p class="description">{{ post.description }}</p>
-        <p class="meta">
-          {{ post.createdAt }} · {{ post.writer }}
-        </p>
+        <div class="post-meta">
+          <div class="tags">
+            <span v-for="tag in post.tags" :key="tag" class="tag-item">{{ tag }}</span>
+          </div>
+          <div class="date-author">
+            <span>{{ post.createdAt }}</span> · <span>{{ post.writer }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import defaultThumbnail from '@/assets/logo.png';
+
 export default {
-  name: 'PostList',
   props: {
     posts: {
       type: Array,
@@ -28,12 +32,22 @@ export default {
     }
   },
   methods: {
-    getThumbnailUrl(thumbnail) {
-      return thumbnail ? thumbnail : require('@/assets/logo.png');
+    getThumbnail(thumbnailUrl) {
+      if (!thumbnailUrl || thumbnailUrl.startsWith('s3://')) {
+        const s3Key = thumbnailUrl ? thumbnailUrl.replace('s3://tech-blog-image/', '') : '';
+        return s3Key 
+          ? `https://tech-blog-image.s3.amazonaws.com/${s3Key}`
+          : defaultThumbnail;
+      } else {
+        return thumbnailUrl;
+      }
     },
-    goToDetail(postId) {
-      // 게시글 상세 페이지로 이동
-      this.$router.push(`/post/${postId}`);
+    goToPostDetail(postId) {
+      if (postId) {
+        this.$router.push({ name: 'PostDetail', params: { postId: postId } });
+      } else {
+        console.error('postId가 없습니다!');
+      }
     }
   }
 }
@@ -41,16 +55,16 @@ export default {
 
 <style scoped>
 .post-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  max-width: calc(300px * 5 + 80px); /* 5개의 카드 너비 + 4개의 간격 */
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 15px;
   width: 100%;
+  max-width: 1500px;
+  padding: 0;
 }
 
 .post-card {
-  width: 300px;
+  width: 100%;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -65,28 +79,41 @@ export default {
 
 .post-thumbnail {
   width: 100%;
-  height: 180px;
+  height: 140px;
   object-fit: cover;
 }
 
 .post-content {
-  padding: 15px;
+  padding: 12px;
 }
 
 .post-content h2 {
-  font-size: 1.2em;
+  font-size: 1.1em;
   margin-bottom: 10px;
   color: #333;
 }
 
-.post-content .description {
-  font-size: 0.9em;
-  color: #666;
-  margin-bottom: 10px;
+.post-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.post-content .meta {
+.tags {
+  display: flex;
+  gap: 5px;
+}
+
+.tag-item {
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 0.7em;
+  color: #007bff;
+}
+
+.date-author {
   font-size: 0.8em;
-  color: #999;
+  color: #666;
 }
 </style>
