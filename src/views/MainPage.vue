@@ -28,14 +28,14 @@ export default {
   data() {
     return {
       posts: [],
-      tags: [], // 태그 리스트
+      tags: [],
       currentPage: 0,
       totalPages: 0,
       pageSize: 20,
-      accessToken: '', // accessToken을 저장할 변수
+      accessToken: '',
     };
   },
-  mounted() { // mounted() 훅에서 로컬 스토리지 접근
+  mounted() {
     this.accessToken = localStorage.getItem('accessToken') || '';
     this.currentPage = parseInt(this.$route.query.page) || 0;
     
@@ -71,14 +71,14 @@ export default {
       if (this.currentPage < this.totalPages - 1) {
         this.currentPage++;
         this.updatePageQuery();
-        this.fetchPosts(); // 페이지 업데이트 후 게시글 다시 가져오기
+        this.fetchPosts();
       }
     },
     prevPage() {
       if (this.currentPage > 0) {
         this.currentPage--;
         this.updatePageQuery();
-        this.fetchPosts(); // 페이지 업데이트 후 게시글 다시 가져오기
+        this.fetchPosts();
       }
     },
     updatePageQuery() {
@@ -104,7 +104,7 @@ export default {
   overflow-y: auto;
   height: calc(100vh - 160px);
   border-radius: 10px;
-  background-color: #f9f9f9;
+  background-color: transparent; /* 사이드바 배경색 제거 */
 }
 
 .tag-list {
@@ -119,15 +119,14 @@ export default {
 
 .tag-item {
   display: inline-block;
-  background-color: #f0f0f0;
-  border-radius: 12px;
-  padding: 4px 8px;
-  font-size: 0.75em;
-  color: #007bff;
+  background-color: #f7f7f7; /* 태그 배경색 */
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  color: #28a745; /* 태그 글자색 */
   text-align: center;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  width: 80%;
 }
 
 .tag-item:hover {
