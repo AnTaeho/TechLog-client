@@ -1,13 +1,12 @@
 <template>
   <div class="write-container">
     <div class="header">
-      <!-- 제목 및 요약 입력 -->
+      <!-- 제목 입력 -->
       <input type="text" v-model="title" placeholder="제목을 입력하세요" class="title-input" />
-      <input type="text" v-model="description" placeholder="요약을 입력하세요" class="description-input" />
     </div>
 
     <div class="content-container">
-      <div class="editor-section">
+      <div class="editor-section" @drop.prevent="handleDrop" @dragover.prevent>
         <!-- 본문 입력 영역 -->
         <textarea ref="contentTextarea" v-model="content" placeholder="내용을 입력하세요" class="content-textarea"></textarea>
       </div>
@@ -27,6 +26,14 @@
       </div>
     </div>
 
+    <div class="tags-input">
+      <label for="tags">태그 입력 (쉼표로 구분):</label>
+      <input type="text" v-model="tagsInput" @input="updateTags" placeholder="예: 영어, 자바, 구현" />
+      <div class="tags-preview">
+        <span v-for="(tag, index) in tags" :key="index" class="tag-item">{{ tag.content }}</span>
+      </div>
+    </div>
+
     <div class="actions">
       <router-link to="/" class="back-button">취소</router-link>
       <button @click="savePost" class="save-button">출간하기</button>
@@ -43,10 +50,11 @@ export default {
   data() {
     return {
       title: '',
-      description: '',
       content: '',
       thumbnail: '',
-      previousThumbnail: ''
+      previousThumbnail: '',
+      tagsInput: '', // 태그 입력을 위한 데이터
+      tags: [] // 태그 객체 배열
     };
   },
   computed: {
@@ -55,6 +63,9 @@ export default {
     }
   },
   methods: {
+    updateTags() {
+      this.tags = this.tagsInput.split(',').map(tag => ({ content: tag.trim() }));
+    },
     async handleThumbnailUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -88,13 +99,41 @@ export default {
         console.error('이전 썸네일 삭제 중 오류가 발생했습니다:', error);
       }
     },
+    async handleDrop(event) {
+      const file = event.dataTransfer.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('files', file);
+
+      try {
+        const response = await axiosInstance.post('/images', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        const imageUrl = response.data.result.fileUrl;
+        this.insertImageAtCursor(imageUrl);
+      } catch (error) {
+        console.error('이미지 업로드 중 오류가 발생했습니다:', error);
+      }
+    },
+    insertImageAtCursor(imageUrl) {
+      const textarea = this.$refs.contentTextarea;
+      const startPos = textarea.selectionStart;
+      const endPos = textarea.selectionEnd;
+
+      const textBefore = this.content.substring(0, startPos);
+      const textAfter = this.content.substring(endPos, this.content.length);
+
+      this.content = `${textBefore}<img src="${imageUrl}" alt="이미지"/>\n${textAfter}`;
+    },
     async savePost() {
       try {
         await axiosInstance.post('/posts', {
           title: this.title,
-          description: this.description,
           content: this.content,
-          thumbnail: this.thumbnail
+          thumbnail: this.thumbnail,
+          tags: this.tags // 태그 추가
         });
 
         this.$router.push('/');
@@ -110,7 +149,7 @@ export default {
 .write-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* 전체 화면 높이를 최소 높이로 설정 */
+  min-height: 100vh;
   padding: 20px;
   background-color: #f5f5f5;
   box-sizing: border-box;
@@ -119,7 +158,7 @@ export default {
 .write-box {
   display: flex;
   flex-direction: column;
-  flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
+  flex-grow: 1;
   background-color: #fff;
   padding: 20px;
   border-radius: 10px;
@@ -132,8 +171,7 @@ export default {
   margin-bottom: 20px;
 }
 
-.title-input,
-.description-input {
+.title-input {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
@@ -146,7 +184,7 @@ export default {
   display: flex;
   flex-grow: 1;
   gap: 20px;
-  min-height: auto; /* 내용에 따라 높이가 자동으로 조절되도록 설정 */
+  min-height: auto;
 }
 
 .editor-section {
@@ -174,7 +212,7 @@ export default {
   background-color: #fff;
   overflow-y: auto;
   text-align: left;
-  min-height: auto; /* 미리보기 영역도 내용에 따라 높이가 조절되도록 설정 */
+  min-height: auto;
 }
 
 .thumbnail-upload {
@@ -194,6 +232,23 @@ export default {
   max-height: 100px;
   object-fit: cover;
   margin-top: 10px;
+}
+
+.tags-input {
+  margin-top: 20px;
+}
+
+.tags-preview {
+  margin-top: 10px;
+}
+
+.tag-item {
+  display: inline-block;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  padding: 5px;
+  margin-right: 5px;
+  font-size: 0.9em;
 }
 
 .actions {

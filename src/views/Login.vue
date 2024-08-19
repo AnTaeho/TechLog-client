@@ -55,8 +55,10 @@ export default {
         this.message = '로그인에 성공했습니다.';
 
         // 메인 페이지로 리디렉션
-        this.$emit('login-success', { name, accessToken, refreshToken });
-        this.$router.push('/');
+        this.$router.push('/'); // Vue Router를 사용하여 메인 페이지로 리디렉션
+        setTimeout(() => {
+          window.location.reload(); // 페이지 새로고침
+        }, 100);
       } catch (error) {
         this.message = '로그인 중 오류가 발생했습니다.';
       }
