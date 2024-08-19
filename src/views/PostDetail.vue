@@ -48,7 +48,8 @@ export default {
             }
           }
           return `<pre class="language-${lang}"><code>${this.escapeHtml(str)}</code></pre>`;
-        }
+        },
+        html: true // HTML 태그를 허용
       })
     };
   },
