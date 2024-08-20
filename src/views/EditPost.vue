@@ -80,10 +80,11 @@ export default {
         this.content = content;
         this.thumbnail = thumbnail;
         this.previousThumbnail = thumbnail;
-        
-        // 태그를 객체 배열에서 문자열 배열로 변환하여 tagsInput에 설정
-        this.tags = tags;
-        this.tagsInput = this.tags.map(tag => tag.content).join(', ');
+
+        // 문자열 배열을 객체 배열로 변환하여 설정
+        this.tags = tags.map(tag => ({ content: tag }));
+        // 문자열 배열을 문자열로 변환하여 tagsInput에 설정
+        this.tagsInput = tags.join(', ');
       } catch (error) {
         console.error('게시글 정보를 가져오는 중 오류가 발생했습니다:', error);
       }

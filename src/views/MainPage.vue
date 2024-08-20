@@ -2,7 +2,14 @@
   <div class="main-page">
     <div v-if="accessToken" class="sidebar">
       <ul class="tag-list">
-        <li v-for="tag in tags" :key="tag" class="tag-item">{{ tag }}</li>
+        <li 
+          v-for="tag in tags" 
+          :key="tag" 
+          :class="{ 'tag-item': true, 'selected': selectedTag === tag }" 
+          @click="toggleTag(tag)"
+        >
+          {{ tag }}
+        </li>
       </ul>
     </div>
     <div :class="{ 'content': true, 'full-width': !accessToken }">
@@ -33,6 +40,7 @@ export default {
       totalPages: 0,
       pageSize: 20,
       accessToken: '',
+      selectedTag: '', // 선택된 태그 상태
     };
   },
   mounted() {
@@ -60,25 +68,63 @@ export default {
     },
     async fetchPosts() {
       try {
-        const response = await this.$axios.get(`/posts?page=${this.currentPage}&size=${this.pageSize}`);
+        const response = await this.$axios.get(`/posts`, {
+          params: {
+            page: this.currentPage,
+            size: this.pageSize,
+          }
+        });
         this.posts = response.data.result.posts;
         this.totalPages = response.data.page.totalPages;
       } catch (error) {
         console.error('게시글을 가져오는 중 오류 발생:', error);
       }
     },
+    async fetchPostsByTag(tag) {
+      try {
+        const response = await this.$axios.get(`/posts/tag`, {
+          params: {
+            page: this.currentPage,
+            size: this.pageSize,
+            tag: tag,
+          }
+        });
+        this.posts = response.data.result.posts;
+        this.totalPages = response.data.page.totalPages;
+      } catch (error) {
+        console.error('태그로 게시글을 가져오는 중 오류 발생:', error);
+      }
+    },
+    toggleTag(tag) {
+      if (this.selectedTag === tag) {
+        this.selectedTag = ''; // 태그 선택 해제
+        this.fetchPosts(); // 전체 게시글 로드
+      } else {
+        this.selectedTag = tag; // 태그 선택
+        this.fetchPostsByTag(tag); // 선택된 태그로 게시글 로드
+      }
+      this.currentPage = 0; // 페이지 번호 초기화
+    },
     nextPage() {
       if (this.currentPage < this.totalPages - 1) {
         this.currentPage++;
         this.updatePageQuery();
-        this.fetchPosts();
+        if (this.selectedTag) {
+          this.fetchPostsByTag(this.selectedTag);
+        } else {
+          this.fetchPosts();
+        }
       }
     },
     prevPage() {
       if (this.currentPage > 0) {
         this.currentPage--;
         this.updatePageQuery();
-        this.fetchPosts();
+        if (this.selectedTag) {
+          this.fetchPostsByTag(this.selectedTag);
+        } else {
+          this.fetchPosts();
+        }
       }
     },
     updatePageQuery() {
@@ -104,7 +150,7 @@ export default {
   overflow-y: auto;
   height: calc(100vh - 160px);
   border-radius: 10px;
-  background-color: transparent; /* 사이드바 배경색 제거 */
+  background-color: transparent;
 }
 
 .tag-list {
@@ -119,11 +165,11 @@ export default {
 
 .tag-item {
   display: inline-block;
-  background-color: #f7f7f7; /* 태그 배경색 */
+  background-color: #f7f7f7;
   border-radius: 20px;
   padding: 6px 12px;
   font-size: 0.9em;
-  color: #28a745; /* 태그 글자색 */
+  color: #28a745;
   text-align: center;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -131,6 +177,11 @@ export default {
 
 .tag-item:hover {
   background-color: #e0e0e0;
+}
+
+.selected {
+  background-color: #28a745; /* 선택된 태그 배경색 */
+  color: #fff; /* 선택된 태그 글자색 */
 }
 
 .content {
