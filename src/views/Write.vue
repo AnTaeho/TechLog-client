@@ -35,7 +35,7 @@
     </div>
 
     <div class="actions">
-      <router-link to="/" class="back-button">취소</router-link>
+      <router-link to="/" @click.prevent="cancelPost" class="back-button">취소</router-link>
       <button @click="savePost" class="save-button">출간하기</button>
     </div>
   </div>
@@ -54,7 +54,8 @@ export default {
       thumbnail: '',
       previousThumbnail: '',
       tagsInput: '', // 태그 입력을 위한 데이터
-      tags: [] // 태그 객체 배열
+      tags: [], // 태그 객체 배열
+      imageUrls: [] // 본문에 추가된 이미지 URL을 저장하기 위한 배열
     };
   },
   computed: {
@@ -113,6 +114,7 @@ export default {
 
         const imageUrl = response.data.result.fileUrl;
         this.insertImageAtCursor(imageUrl);
+        this.imageUrls.push(imageUrl); // 이미지 URL 저장
       } catch (error) {
         console.error('이미지 업로드 중 오류가 발생했습니다:', error);
       }
@@ -126,6 +128,16 @@ export default {
       const textAfter = this.content.substring(endPos, this.content.length);
 
       this.content = `${textBefore}<img src="${imageUrl}" alt="이미지"/>\n${textAfter}`;
+    },
+    async cancelPost() {
+      // 모든 이미지 URL 삭제
+      try {
+        await Promise.all(this.imageUrls.map(url => axiosInstance.delete('/images', { params: { fileUrl: url } })));
+      } catch (error) {
+        console.error('이미지 삭제 중 오류가 발생했습니다:', error);
+      } finally {
+        this.$router.push('/');
+      }
     },
     async savePost() {
       try {
