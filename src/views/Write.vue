@@ -127,7 +127,7 @@ export default {
       const textBefore = this.content.substring(0, startPos);
       const textAfter = this.content.substring(endPos, this.content.length);
 
-      this.content = `${textBefore}<img src="${imageUrl}" alt="이미지"/>\n${textAfter}`;
+      this.content = `${textBefore}<img src="${imageUrl}" alt="이미지" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"/>\n${textAfter}`;
     },
     async cancelPost() {
       // 모든 이미지 URL 삭제
@@ -225,6 +225,14 @@ export default {
   overflow-y: auto;
   text-align: left;
   min-height: auto;
+}
+
+/* 이미지 크기 자동 조절을 위한 CSS */
+.content-preview img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .thumbnail-upload {
