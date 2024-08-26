@@ -56,6 +56,7 @@ export default {
       tagsInput: '', // 태그 입력을 위한 데이터
       tags: [], // 태그 객체 배열
       postId: null,
+      newUrls: [] // 새로 추가된 이미지 URLs를 저장하기 위한 배열
     };
   },
   computed: {
@@ -81,10 +82,10 @@ export default {
         this.thumbnail = thumbnail;
         this.previousThumbnail = thumbnail;
 
-        // 문자열 배열을 객체 배열로 변환하여 설정
+        // 태그 설정
         this.tags = tags.map(tag => ({ content: tag }));
-        // 문자열 배열을 문자열로 변환하여 tagsInput에 설정
         this.tagsInput = tags.join(', ');
+
       } catch (error) {
         console.error('게시글 정보를 가져오는 중 오류가 발생했습니다:', error);
       }
@@ -135,6 +136,7 @@ export default {
 
         const imageUrl = response.data.result.fileUrl;
         this.insertImageAtCursor(imageUrl);
+        this.newUrls.push(imageUrl); // 새 이미지 URL 추가
       } catch (error) {
         console.error('이미지 업로드 중 오류가 발생했습니다:', error);
       }
@@ -155,7 +157,8 @@ export default {
           title: this.title,
           content: this.content,
           thumbnail: this.thumbnail,
-          tags: this.tags // 태그 객체 배열로 전송
+          tags: this.tags, // 태그 객체 배열로 전송
+          newUrls: this.newUrls // 새로 추가된 이미지 URL 배열도 함께 전송
         });
 
         this.$router.push(`/post/${this.postId}`);
