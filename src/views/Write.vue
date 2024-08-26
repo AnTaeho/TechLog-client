@@ -145,7 +145,8 @@ export default {
           title: this.title,
           content: this.content,
           thumbnail: this.thumbnail,
-          tags: this.tags // 태그 추가
+          tags: this.tags, // 태그 추가
+          urls: this.imageUrls // 본문에 추가된 이미지 URL 배열 추가
         });
 
         this.$router.push('/');
