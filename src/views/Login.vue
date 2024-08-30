@@ -45,12 +45,13 @@ export default {
           password: this.password
         });
 
-        const { accessToken, refreshToken, name } = response.data.result;
+        const { accessToken, refreshToken, name, userId } = response.data.result;
 
         // 로컬 스토리지에 로그인 정보 저장
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
         localStorage.setItem('name', name);
+        localStorage.setItem('userId', userId);
 
         this.message = '로그인에 성공했습니다.';
 

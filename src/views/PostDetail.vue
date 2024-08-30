@@ -11,6 +11,7 @@
         </div>
       </div>
       <div class="meta-right">
+        <!-- 수정된 부분: canEdit 및 canDelete 조건 확인 -->
         <button v-if="canEdit" @click="editPost" class="edit-button">수정</button>
         <button v-if="canDelete" @click="deletePost" class="delete-button">삭제</button>
       </div>
@@ -58,10 +59,12 @@ export default {
       return this.md.render(this.post.content || '');
     },
     canDelete() {
-      return this.post.writer === localStorage.getItem('name');
+      const userId = localStorage.getItem('userId'); // 수정: userId 가져오기
+      return this.post.writerId === Number(userId); // userId와 writerId를 비교
     },
     canEdit() {
-      return this.post.writer === localStorage.getItem('name');
+      const userId = localStorage.getItem('userId'); // 수정: userId 가져오기
+      return this.post.writerId === Number(userId); // userId와 writerId를 비교
     }
   },
   created() {
@@ -82,7 +85,8 @@ export default {
     async fetchPostDetail() {
       try {
         const response = await this.$axios.get(`/posts/${this.postId}`);
-        this.post = response.data.result;
+        this.post = response.data.result; // 데이터 결과를 post에 저장
+        console.log('Fetched Post:', this.post); // Debug: Fetch한 post 출력
       } catch (error) {
         console.error('Error fetching post detail:', error);
       }

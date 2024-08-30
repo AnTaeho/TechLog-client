@@ -1,4 +1,3 @@
-// src/plugins/axios.js
 import axios from 'axios';
 
 const axiosInstance = axios.create({
@@ -60,11 +59,14 @@ axiosInstance.interceptors.response.use(
           const response = await axios.post(
             `http://localhost:8081/users/reissue?refreshToken=${refreshToken}`
           );
-          const { accessToken, refreshToken: newRefreshToken } = response.data.result;
+          const { accessToken, refreshToken: newRefreshToken, userId } = response.data.result;
 
-          // Save the new tokens
+          // Save the new tokens and userId
           localStorage.setItem('accessToken', accessToken);
           localStorage.setItem('refreshToken', newRefreshToken);
+          if (userId) {
+            localStorage.setItem('userId', userId); // userId 저장
+          }
 
           processQueue(null, accessToken);
 
@@ -76,6 +78,7 @@ axiosInstance.interceptors.response.use(
           // Clear tokens and redirect to login on failure
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
+          localStorage.removeItem('userId'); // userId 제거
           window.location.href = '/';
           return Promise.reject(refreshError);
         } finally {

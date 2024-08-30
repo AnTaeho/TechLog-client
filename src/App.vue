@@ -22,7 +22,8 @@ export default {
   name: 'App',
   data() {
     return {
-      name: '' // 이메일 대신 이름을 저장할 변수
+      name: '', // 이메일 대신 이름을 저장할 변수
+      userId: 0 // 추가된 userId를 저장할 변수
     };
   },
   computed: {
@@ -33,19 +34,31 @@ export default {
   created() {
     if (this.isLoggedIn) {
       this.name = localStorage.getItem('name'); // 로컬 스토리지에서 이름을 가져옴
+      this.userId = localStorage.getItem('userId'); // 로컬 스토리지에서 userId를 가져옴
     }
   },
   methods: {
     handleLoginSuccess(loginData) {
-      const { name, accessToken, refreshToken } = loginData;
+      const { name, accessToken, refreshToken, userId } = loginData;
 
-      // 토큰과 이름을 로컬 스토리지에 저장
+      // 디버깅: 로그인 데이터 확인
+      console.log('Login Data:', loginData); 
+
+      // userId가 유효한지 확인
+      if (!userId) {
+        console.error('userId is missing in login response.');
+        return;
+      }
+
+      // 토큰, 이름, userId를 로컬 스토리지에 저장
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('name', name);
+      localStorage.setItem('userId', userId); // userId 저장
 
       // 상태 갱신
       this.name = name;
+      this.userId = userId;
 
       // 메인 페이지로 리디렉션
       this.$router.push('/');
@@ -62,7 +75,9 @@ export default {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('name');
+        localStorage.removeItem('userId'); // userId 제거
         this.name = '';
+        this.userId = null;
         this.$router.push('/');
         window.location.reload(); // 화면 새로고침
       } catch (error) {
