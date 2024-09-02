@@ -56,8 +56,8 @@ axiosInstance.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         try {
           // Refresh the tokens using the refresh token
-          const response = await axios.post(
-            `http://localhost:8081/users/reissue?refreshToken=${refreshToken}`
+          const response = await axiosInstance.post(
+            `/users/reissue?refreshToken=${refreshToken}`
           );
           const { accessToken, refreshToken: newRefreshToken, userId } = response.data.result;
 
