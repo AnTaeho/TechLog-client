@@ -3,5 +3,5 @@ module.exports = defineConfig({
   transpileDependencies: true,
   lintOnSave: false,
   publicPath: 'https://AnTaeho.github.io/TechLog-client',
-  outputDir: 'dist'
+  outputDir: './docs'
 })
