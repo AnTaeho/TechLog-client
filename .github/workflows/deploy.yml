@@ -1,43 +1,58 @@
-name: client
+name: Deploy Vue.js App to EC2
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout source code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '21'
+          node-version: '16'  # Node.js 버전 설정
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./vue-client-project
-      - name: Build
-        run: npm run build
-        working-directory: ./vue-client-project
-      - name: SHOW AWS CLI VERSION
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_EC2_METADATA_DISABLED: true
-        run: |
-          aws --version
 
-      - name: Sync Bucket
+      - name: Build Vue.js project
+        run: npm run build
+
+      - name: Get Short SHA
+        id: short_sha
+        run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Docker Login
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_EC2_METADATA_DISABLED: true
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        run: echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
+
+      - name: Build and Push Docker Image
+        env:
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_IMAGE_TAG: vue-app:${{ steps.short_sha.outputs.sha_short }}
         run: |
-          aws s3 sync \
-            --region us-east-1 \
-            ./vue-client-project/dist s3://my-vue-project \
-            --delete
+          docker build -t $DOCKER_IMAGE_TAG .
+          docker tag $DOCKER_IMAGE_TAG $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_TAG
+          docker push $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_TAG
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.EC2_PEM_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/vue-app:${{ steps.short_sha.outputs.sha_short }}
+            docker stop vue-app || true
+            docker rm vue-app || true
+            docker run -d --name vue-app -p 80:80 ${{ secrets.DOCKER_HUB_USERNAME }}/vue-app:${{ steps.short_sha.outputs.sha_short }}
