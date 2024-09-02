@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axiosInstance from '@/plugins/axios';
 
 export default {
   name: 'Login',
@@ -40,7 +40,7 @@ export default {
   methods: {
     async login() {
       try {
-        const response = await axios.post('http://localhost:8081/users/login', {
+        const response = await axiosInstance.post('/users/login', {
           email: this.email,
           password: this.password
         });

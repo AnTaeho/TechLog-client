@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axiosInstance from '@/plugins/axios';
 
 export default {
   name: 'Join',
@@ -41,7 +41,7 @@ export default {
   methods: {
     async join() {
       try {
-        const response = await axios.post('http://localhost:8081/users/join', {
+        const response = await axiosInstance.post('/users/join', {
           email: this.email,
           password: this.password,
           name: this.name

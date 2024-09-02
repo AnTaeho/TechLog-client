@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axiosInstance from '@/plugins/axios';
 
 export default {
   name: 'App',
@@ -66,7 +66,7 @@ export default {
     },
     async logout() {
       try {
-        await axios.post('http://localhost:8081/users/logout', {}, {
+        await axiosInstance.post('/users/logout', {}, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`
           }
