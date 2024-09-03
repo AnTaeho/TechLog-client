@@ -30,7 +30,7 @@ jobs:
         env:
           YAML_SECRET: ${{ secrets.ENV }}
           YAML_DIR: src
-          YAML_FILE_NAME: .evn
+          YAML_FILE_NAME: .env
         run: |
           echo $YAML_SECRET | base64 --decode > $YAML_DIR/$YAML_FILE_NAME
           echo "YAML_SECRET has been decoded and saved to $YAML_DIR/$YAML_FILE_NAME"

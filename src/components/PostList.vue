@@ -34,9 +34,9 @@ export default {
   methods: {
     getThumbnail(thumbnailUrl) {
       if (!thumbnailUrl || thumbnailUrl.startsWith('s3://')) {
-        const s3Key = thumbnailUrl ? thumbnailUrl.replace('s3://tech-blog-image/', '') : '';
+        const s3Key = thumbnailUrl ? thumbnailUrl.replace(process.env.VUE_APP_API_S3_URL, '') : '';
         return s3Key 
-          ? `https://tech-blog-image.s3.amazonaws.com/${s3Key}`
+          ? process.env.VUE_APP_API_S3_URL + `/${s3Key}`
           : defaultThumbnail;
       } else {
         return thumbnailUrl;
