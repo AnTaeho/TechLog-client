@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://13.209.59.18:8081',
+  baseURL: process.env.VUE_APP_API_BASE_URL,  // 환경 변수에서 가져오기
   timeout: 10000,
 });
 
