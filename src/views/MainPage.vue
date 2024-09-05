@@ -56,7 +56,7 @@ export default {
   methods: {
     async fetchTags() {
       try {
-        const response = await this.$axios.get('${process.env.VUE_APP_API_BASE_URL}/tags', {
+        const response = await this.$axios.get('/tags', {
           headers: {
             Authorization: `Bearer ${this.accessToken}`
           }
@@ -68,7 +68,7 @@ export default {
     },
     async fetchPosts() {
       try {
-        const response = await this.$axios.get(`${process.env.VUE_APP_API_BASE_URL}/posts`, {
+        const response = await this.$axios.get(`/posts`, {
           params: {
             page: this.currentPage,
             size: this.pageSize,
@@ -82,7 +82,7 @@ export default {
     },
     async fetchPostsByTag(tag) {
       try {
-        const response = await this.$axios.get(`${process.env.VUE_APP_API_BASE_URL}/posts/tag`, {
+        const response = await this.$axios.get(`/posts/tag`, {
           params: {
             page: this.currentPage,
             size: this.pageSize,
